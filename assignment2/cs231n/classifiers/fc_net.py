@@ -48,6 +48,11 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W2' and 'b2'.                         #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        
+        self.params['W1'] = weight_scale*np.random.randn(input_dim, hidden_dim) 
+        self.params['b1'] = np.zeros(hidden_dim) 
+        self.params['W2'] = weight_scale*np.random.randn(hidden_dim, num_classes)
+        self.params['b2'] = np.zeros(num_classes)
 
         pass
 
@@ -82,7 +87,17 @@ class TwoLayerNet(object):
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        
+        W1 = self.params['W1']
+        b1 = self.params['b1']
+        W2 = self.params['W2']
+        b2 = self.params['b2']
+        
+        L1,cacheL1 = affine_forward(X,W1,b1)
+        R1,cacheR1 = relu_forward(L1)
+        scores,cacheL2 = affine_forward(R1,W2,b2)
+        
+        
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -106,7 +121,18 @@ class TwoLayerNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        loss, dloss = softmax_loss(scores, y)
+        loss += 0.5*self.reg*(np.sum(W1*W1)+ np.sum(W2*W2)) 
+        
+        dR1, grads['W2'], grads['b2'] = affine_backward(dloss,cacheL2)
+        
+        cache = (cacheL1,cacheR1)
+        
+        dx, grads['W1'], grads['b1'] = affine_relu_backward(dR1, cache)
+        
+        grads['W2'] += self.reg*W2
+        grads['W1'] += self.reg*W1
+            
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -177,6 +203,19 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zeros.                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        for i in range(self.num_layers-1):
+            
+            self.params['W'+str(i+1)] = weight_scale * np.random.randn(input_dim, hidden_dims[i])
+            self.params['b'+str(i+1)] = np.zeros(hidden_dims[i])
+            
+            if self.normalization != None:
+                self.params['gamma'+str(i+1)] = np.ones([hidden_dims[i]])
+                self.params['beta'+str(i+1)] = np.zeros([hidden_dims[i]])
+            
+            input_dim = hidden_dims[i]
+        
+        self.params['W'+str(self.num_layers)] = weight_scale * np.random.randn(input_dim, num_classes)
+        self.params['b'+str(self.num_layers)] = np.zeros(num_classes) 
 
         pass
 
@@ -213,10 +252,11 @@ class FullyConnectedNet(object):
     def loss(self, X, y=None):
         """
         Compute loss and gradient for the fully-connected net.
-
+        
         Input / output: Same as TwoLayerNet above.
         """
         X = X.astype(self.dtype)
+        
         mode = 'test' if y is None else 'train'
 
         # Set train/test mode for batchnorm params and dropout param since they
@@ -240,7 +280,32 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        
+        fc_cache1 = {}
+        fc_cache2 = {}
+        fc_cache3 = {}
+        fc_cache4 = {}
+        
+       
+        fc = X
+        
+        for i in range(self.num_layers-1):
+            fc, fc_cache1[str(i+1)] = affine_forward(fc,self.params['W'+str(i+1)],self.params['b'+str(i+1)])
+                      
+            if self.normalization:
+                fc, fc_cache2[str(i+1)]=batchnorm_forward(fc, self.params['gamma'+str(i+1)],self.params['beta'+str(i+1)],self.bn_param[i])
+                
+            fc, fc_cache3[str(i+1)] = relu_forward(fc)
+            
+            if self.use_dropout:
+                fc, fc_cache4[str(i+1)]  = dropout_forward(fc, self.dropout_param)
+        
+        L = self.num_layers 
+                
+        scores,fc_cache1[str(L)] = affine_forward(fc,self.params['W'+str(L)],self.params['b'+str(L)])    
+        
+        
+        
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -267,6 +332,31 @@ class FullyConnectedNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        loss, dloss = softmax_loss(scores, y)
+        
+        for i in range(self.num_layers):
+            loss += 0.5*self.reg*(np.sum(self.params['W'+str(i+1)]**2))
+        
+        print(self.reg)
+        
+        lfc, grads['W'+str(self.num_layers)], grads['b'+str(self.num_layers)]= affine_backward(dloss,fc_cache1[str(self.num_layers)])               
+        grads['W'+str(self.num_layers)] += self.reg*self.params['W'+str(self.num_layers)]
+       
+        
+        for i in reversed(range(self.num_layers-1)):
+            if self.use_dropout:
+                lfc  = dropout_backward(lfc, fc_cache4[str(i+1)])
+
+            lfc = relu_backward(lfc,fc_cache3[str(i+1)])
+             
+            if self.normalization:
+                lfc, grads['gamma'+str(i+1)], grads['beta'+str(i+1)]=batchnorm_backward_alt(lfc, fc_cache2[str(i+1)])
+            
+            lfc, grads['W'+str(i+1)], grads['b'+str(i+1)]= affine_backward(lfc,fc_cache1[str(i+1)])                          
+            
+            grads['W'+str(i+1)] += self.reg*self.params['W'+str(i+1)]
+           
+            
 
         pass
 

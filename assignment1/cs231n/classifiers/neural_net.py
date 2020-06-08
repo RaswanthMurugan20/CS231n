@@ -143,7 +143,7 @@ class TwoLayerNet(object):
         grads['b2'] = db2
         
         drelu = np.dot(dsoftmax,W2.T)
-        drelu[fist_score<0] = 0
+        drelu[first_score<0] = 0
         
         dW1 = np.dot(X.T,drelu)
         dW1 += 2*W1*reg
@@ -199,7 +199,7 @@ class TwoLayerNet(object):
             # them in X_batch and y_batch respectively.                             #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-            u = np.random.choice(N,size = batch_size,replace = True)
+            u = np.random.choice(num_train,size = batch_size,replace = True)
             X_batch = X[u]
             y_batch = y[u]
 
@@ -219,10 +219,10 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             
-            self.params['W1'] = self.params['W1'] - learnig_rate*grad['W1']
-            self.params['W2'] = self.params['W2'] - learnig_rate*grad['W2']
-            self.params['b1'] = self.params['b1'] - learnig_rate*grad['b1']
-            self.params['b2'] = self.params['b2'] - learnig_rate*grad['b2']
+            self.params['W1'] -= learning_rate*grads['W1']
+            self.params['W2'] -= learning_rate*grads['W2']
+            self.params['b1'] -= learning_rate*grads['b1']
+            self.params['b2'] -= learning_rate*grads['b2']
             
             
 
