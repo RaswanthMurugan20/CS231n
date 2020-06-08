@@ -1,1 +1,7 @@
-Details about this assignment can be found [on the course webpage](http://cs231n.github.io/), under Assignment #1 of Spring 2019.
+Solutions for cs231n assignment which deals with Image classification using:
+
+1. K-nearest neighbour
+2. Softmax
+3. SVM
+4. 2 layer simple neural network
+5. linear_classifier 
