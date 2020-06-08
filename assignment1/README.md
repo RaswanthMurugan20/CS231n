@@ -1,4 +1,4 @@
-Solutions for cs231n assignment which deals with Image classification using:
+Solutions for cs231n assignment-1 which deals with Image classification using:
 
 1. K-nearest neighbour
 2. Softmax
